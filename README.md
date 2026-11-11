@@ -86,13 +86,13 @@ azcopy --version
 
 O instalador baixa o ZIP oficial da Microsoft, extrai `azcopy.exe`, substitui o executável no destino e adiciona essa pasta ao PATH do sistema, sem duplicar a mesma entrada. Também atualiza o PATH da sessão atual e remove os arquivos temporários. Reabra outros terminais já abertos para usar o PATH atualizado.
 
-Use `-Destino 'C:\AzureBackup'` para manter o executável junto de `Setup-Backup.ps1` e `Start-Backup.ps1`, como os scripts exigem. Se usar outra pasta de automação, informe essa mesma pasta no parâmetro. Sem `-Destino`, o instalador usa `C:\Program Files\AzCopy`; nesse caso, copie também o executável para a pasta da automação. Adicionar ao PATH não altera o caminho usado pelos scripts de backup.
+Os scripts usam o `azcopy.exe` da pasta da automação quando ele existe; caso contrário, procuram no `PATH`. Se o AzCopy já estiver no PATH do sistema, não é necessário instalá-lo novamente nem copiar o executável para a pasta. Sem `-Destino`, o instalador usa `C:\Program Files\AzCopy`. Garanta que o executável esteja acessível à conta que executará a tarefa agendada.
 
-A instalação é uma etapa separada: execute-a antes do setup para disponibilizar `azcopy.exe` na pasta da automação. Ela requer conexão HTTPS ao download da Microsoft e não configura credenciais nem agenda backups.
+A instalação é uma etapa separada, necessária apenas se o AzCopy ainda não estiver disponível na pasta da automação ou no PATH. Ela requer conexão HTTPS ao download da Microsoft e não configura credenciais nem agenda backups.
 
 ### Setup automático
 
-Após criar o container e gerar o SAS, copie `Setup-Backup.ps1`, `Save-SasCredential.ps1` e `Start-Backup.ps1` para `C:\AzureBackup`, onde o AzCopy foi instalado na etapa anterior. Execute no próprio Windows Server, com permissão para registrar tarefas:
+Após criar o container e gerar o SAS, copie `Setup-Backup.ps1`, `Save-SasCredential.ps1` e `Start-Backup.ps1` para `C:\AzureBackup`. O AzCopy deve estar nessa pasta ou no PATH. Execute no próprio Windows Server, com permissão para registrar tarefas:
 
 ```powershell
 Set-Location 'C:\AzureBackup'
@@ -133,12 +133,12 @@ O setup não envia o backup nem valida o acesso à Azure. Depois de concluí-lo,
 New-Item -ItemType Directory -Path 'C:\AzureBackup' -Force
 ```
 
-Copie `Start-Backup.ps1` para `C:\AzureBackup` e instale o AzCopy nessa mesma pasta conforme a etapa anterior. Como alternativa, obtenha-o pelo [download oficial do AzCopy](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) e coloque `azcopy.exe` junto do script. O executável é ignorado pelo Git.
+Copie `Start-Backup.ps1` para `C:\AzureBackup` e disponibilize o AzCopy no PATH ou nessa mesma pasta conforme a etapa anterior. Como alternativa, obtenha-o pelo [download oficial do AzCopy](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) e coloque `azcopy.exe` junto do script. O executável é ignorado pelo Git.
 
-Confira a versão no Windows Server:
+Confira a versão no Windows Server (se instalado apenas na pasta, use `& 'C:\AzureBackup\azcopy.exe' --version`):
 
 ```powershell
-& 'C:\AzureBackup\azcopy.exe' --version
+azcopy --version
 ```
 
 Na configuração manual, edite o início do script, trocando `X:` pela unidade real. Se existir `backup-config.json`, a origem salva pelo setup terá prioridade:
@@ -151,7 +151,7 @@ Os demais caminhos são relativos à pasta do script (`$PSScriptRoot`):
 
 ```text
 C:\AzureBackup\
-    azcopy.exe          (instalado separadamente)
+    azcopy.exe          (opcional quando disponivel no PATH)
     azure-sas.xml
     backup-config.json    (gerado pelo setup)
     Install-AzCopy.ps1    (instalador opcional)

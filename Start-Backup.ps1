@@ -5,7 +5,7 @@ Envia o RAR mais recente para Azure Blob Storage via AzCopy.
 .EXAMPLE
 & 'C:\AzureBackup\Start-Backup.ps1'
 .NOTES
-Execute apos concluir o backup. Requer azcopy.exe e azure-sas.xml locais.
+Execute apos concluir o backup. Requer azcopy.exe local ou no PATH e azure-sas.xml local.
 Crie a credencial com a mesma conta e no mesmo Windows Server da execucao.
 Saida: 0 = enviado ou ja existente; 1 = erro.
 #>
@@ -42,9 +42,14 @@ try {
         throw 'Configure uma pasta de backup existente, com a unidade correta.'
     }
 
-    # Verifica se azcopy.exe existe na pasta do script.
+    # Usa o executavel local ou procura no PATH.
     if (-not (Test-Path -LiteralPath $AzCopy -PathType Leaf)) {
-        throw 'azcopy.exe nao encontrado na pasta do script.'
+        $ComandoAzCopy = Get-Command 'azcopy.exe' -CommandType Application -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if (-not $ComandoAzCopy) {
+            throw 'azcopy.exe nao encontrado na pasta do script nem no PATH.'
+        }
+        $AzCopy = $ComandoAzCopy.Source
     }
 
     # Seleciona o RAR mais recente, sem subpastas.

@@ -46,10 +46,20 @@ try {
     $ArquivoConfig = Join-Path $PSScriptRoot 'backup-config.json'
     $ArquivoCredencial = Join-Path $PSScriptRoot 'azure-sas.xml'
 
-    foreach ($Caminho in @($ScriptBackup, $ScriptCredencial, $AzCopy)) {
+    foreach ($Caminho in @($ScriptBackup, $ScriptCredencial)) {
         if (-not (Test-Path -LiteralPath $Caminho -PathType Leaf)) {
             throw "Arquivo obrigatorio nao encontrado: $Caminho"
         }
+    }
+
+    # Usa o executavel local ou procura no PATH.
+    if (-not (Test-Path -LiteralPath $AzCopy -PathType Leaf)) {
+        $ComandoAzCopy = Get-Command 'azcopy.exe' -CommandType Application -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if (-not $ComandoAzCopy) {
+            throw 'azcopy.exe nao encontrado na pasta do script nem no PATH.'
+        }
+        $AzCopy = $ComandoAzCopy.Source
     }
 
     if (-not [IO.Path]::IsPathRooted($PastaBackup) -or
