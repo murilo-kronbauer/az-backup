@@ -1,0 +1,21 @@
+# Credenciais e segredos locais
+azure-sas.xml
+backup-config.json
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+
+# AzCopy: executavel, logs e planos
+azcopy.exe
+Logs/
+*.log
+*.steV*
+
+# Backups
+*.rar
+*.zip
+.DS_Store
+Thumbs.db
