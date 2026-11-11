@@ -41,11 +41,12 @@ try {
 
     # Valida os arquivos e a origem antes de configurar.
     $ScriptBackup = Join-Path $PSScriptRoot 'Start-Backup.ps1'
+    $ScriptCredencial = Join-Path $PSScriptRoot 'Save-SasCredential.ps1'
     $AzCopy = Join-Path $PSScriptRoot 'azcopy.exe'
     $ArquivoConfig = Join-Path $PSScriptRoot 'backup-config.json'
     $ArquivoCredencial = Join-Path $PSScriptRoot 'azure-sas.xml'
 
-    foreach ($Caminho in @($ScriptBackup, $AzCopy)) {
+    foreach ($Caminho in @($ScriptBackup, $ScriptCredencial, $AzCopy)) {
         if (-not (Test-Path -LiteralPath $Caminho -PathType Leaf)) {
             throw "Arquivo obrigatorio nao encontrado: $Caminho"
         }
@@ -116,39 +117,9 @@ try {
         $CredencialSas | Export-Clixml -LiteralPath $ArquivoCredencial
     } else {
         # Cria e verifica o XML no perfil do usuario escolhido.
-        $CodigoCredencial = @'
-$ErrorActionPreference = 'Stop'
-$Temporario = $null
-try {
-    $Entrada = [Console]::In.ReadToEnd()
-    $Json = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Entrada))
-    $Dados = $Json | ConvertFrom-Json
-    $SidAtual = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-    if ($SidAtual -ne $Dados.Sid) { throw 'Identidade incorreta.' }
-
-    $Segredo = ConvertTo-SecureString $Dados.UrlSas -AsPlainText -Force
-    $Credencial = New-Object System.Management.Automation.PSCredential('SAS', $Segredo)
-    $Temporario = $Dados.Arquivo + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
-    $Credencial | Export-Clixml -LiteralPath $Temporario
-    $Teste = Import-Clixml -LiteralPath $Temporario
-    if ($Teste.GetNetworkCredential().Password -cne $Dados.UrlSas) {
-        throw 'Falha ao verificar a credencial.'
-    }
-    Move-Item -LiteralPath $Temporario -Destination $Dados.Arquivo -Force
-    exit 0
-} catch {
-    [Console]::Error.WriteLine('Nao foi possivel salvar o SAS no perfil escolhido.')
-    exit 1
-} finally {
-    if ($Temporario -and (Test-Path -LiteralPath $Temporario)) {
-        Remove-Item -LiteralPath $Temporario -Force -ErrorAction SilentlyContinue
-    }
-}
-'@
         $Inicio = New-Object System.Diagnostics.ProcessStartInfo
         $Inicio.FileName = $PowerShell
-        $Comando = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($CodigoCredencial))
-        $Inicio.Arguments = '-NoProfile -NonInteractive -EncodedCommand ' + $Comando
+        $Inicio.Arguments = '-NoProfile -NonInteractive -File "{0}"' -f $ScriptCredencial
         $Inicio.UseShellExecute = $false
         $Inicio.LoadUserProfile = $true
         $Inicio.RedirectStandardInput = $true

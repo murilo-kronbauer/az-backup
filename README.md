@@ -20,6 +20,7 @@ Definir na implantação: unidade real da origem, horário, conta Windows de exe
 | --- | --- |
 | `Start-Backup.ps1` | Seleciona e envia o RAR mais recente. |
 | `Setup-Backup.ps1` | Configura a origem, salva o SAS e registra a tarefa diária. |
+| `Save-SasCredential.ps1` | Auxiliar do setup que salva e verifica o SAS na conta escolhida. |
 | `Install-AzCopy.ps1` | Baixa o AzCopy v10 para Windows x64 e adiciona sua pasta ao PATH do sistema. |
 | `backup-config.json` | Origem e usuário informados ao setup; arquivo local ignorado pelo Git. |
 | `azure-sas.xml` | Credencial SAS protegida para o usuário da tarefa; ignorada pelo Git. |
@@ -91,7 +92,7 @@ A instalação é uma etapa separada: execute-a antes do setup para disponibiliz
 
 ### Setup automático
 
-Após criar o container e gerar o SAS, copie `Setup-Backup.ps1` e `Start-Backup.ps1` para `C:\AzureBackup`, onde o AzCopy foi instalado na etapa anterior. Execute no próprio Windows Server, com permissão para registrar tarefas:
+Após criar o container e gerar o SAS, copie `Setup-Backup.ps1`, `Save-SasCredential.ps1` e `Start-Backup.ps1` para `C:\AzureBackup`, onde o AzCopy foi instalado na etapa anterior. Execute no próprio Windows Server, com permissão para registrar tarefas:
 
 ```powershell
 Set-Location 'C:\AzureBackup'
@@ -100,7 +101,7 @@ Set-Location 'C:\AzureBackup'
 
 Substitua a unidade e escolha um horário posterior à conclusão do backup. O parâmetro `-Usuario` define a conta vinculada ao SAS e à tarefa (por exemplo, `DOMINIO\backup` ou `SERVIDOR\backup`); se omitido, usa a conta atual. O setup solicita a senha Windows dessa conta e a URL SAS sem exibi-las. Salva a origem em `backup-config.json`, protege o SAS em `azure-sas.xml` e registra a tarefa `Enviar backup diario para Azure`, para executar mesmo sem sessão aberta.
 
-Se o setup for executado por outra conta, ele inicia um processo com o usuário escolhido, carrega seu perfil e gera e verifica o XML nesse contexto. Assim, a proteção DPAPI vincula a credencial ao mesmo usuário da tarefa, sem etapa manual adicional. Essa conta precisa poder iniciar sessão no servidor e gravar na pasta da automação, além de ler os backups e executar tarefas em lote. O SAS é transmitido pela entrada do processo, sem gravá-lo em texto aberto em arquivos ou argumentos.
+Se o setup for executado por outra conta, ele inicia `Save-SasCredential.ps1` em um processo com o usuário escolhido, carrega seu perfil e gera e verifica o XML nesse contexto. Assim, a proteção DPAPI vincula a credencial ao mesmo usuário da tarefa, sem etapa manual adicional. Essa conta precisa poder iniciar sessão no servidor e gravar na pasta da automação, além de ler os backups e executar tarefas em lote. O SAS é transmitido pela entrada do processo, sem gravá-lo em texto aberto em arquivos ou argumentos.
 
 Parâmetros do setup:
 
@@ -155,6 +156,7 @@ C:\AzureBackup\
     backup-config.json    (gerado pelo setup)
     Install-AzCopy.ps1    (instalador opcional)
     Setup-Backup.ps1
+    Save-SasCredential.ps1
     Start-Backup.ps1
     Logs\
 ```
