@@ -4,7 +4,7 @@ Envio do backup diário de um Windows Server **fora da Azure** para Azure Blob S
 
 ## Cenário e decisões
 
-- Backup de aproximadamente 8 GB por dia, em formato **RAR**.
+- Backup diário em formato **RAR**.
 - Enviar somente o RAR mais recente da pasta, pela última modificação (`LastWriteTimeUtc`). Não pesquisar subpastas.
 - Origem informada: `/app/backups`. No Windows, configurar o caminho absoluto com a unidade real; `X:\app\backups` é um placeholder.
 - Pasta da automação: **`C:\AzureBackup`**.
@@ -241,7 +241,7 @@ C:\AzureBackup
 - Executar assim que possível após um horário perdido.
 - Configurar até três novas tentativas em intervalos de 15 minutos, como no setup.
 - Não iniciar nova instância se a tarefa já estiver executando.
-- Definir o limite de duração conforme o tempo medido do envio de 8 GB; o setup usa 12 horas.
+- Definir o limite de duração conforme o tempo medido do envio; o setup usa 12 horas.
 
 Salve, informe a senha da conta se solicitada e execute manualmente. Confira **Último Resultado = `0x0`**, o log e o objeto na Azure.
 
